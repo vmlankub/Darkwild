@@ -1,0 +1,87 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>
+			Loading... - Dark Wild
+		</title>
+		<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script>
+			if(typeof jQuery==='undefined'){
+				document.write('<script src="./jquery.js"><'+'/script>');
+			}
+		</script>
+		<script src="./HElib.js"></script>
+		<script src="./darkwild_server.js"></script>
+		<script src="./darkwild_client.js"></script>
+		<script src="./darkwild_test.js"></script>
+		<link rel="stylesheet" type="text/css" href="./darkwild.css">
+	</head>
+	<body>
+		<h1 id="game_title">
+			Dark Wild
+		</h1>
+		<div id="game_body">
+			<div class="div_col">
+				<!-- <span>
+					clear_messages
+					<input type="checkbox" class="setting"/>
+				</span> -->
+				<ul id="reponse"></ul>
+				<input type="text" id="send_message" maxlength="20000"/>
+			</div>
+			<div class="div_col">
+				<h2 id="console_title">
+					Console
+				</h2>
+				<div id="player">
+					<div id="name_container" class="container">
+						<span id="name_tag"></span>
+						<span id="name"></span>
+					</div>
+					<div id="health_container" class="container">
+						<span id="health_tag"></span>
+						<span id="health"></span>
+					</div>
+					<div id="coin_container" class="container">
+						<span id="coin_tag"></span>
+						<span id="coin"></span>
+					</div>
+				</div>
+				<div id="move_actions">
+					<div>
+						<button class="action_button" id="respawn" disabled="disabled">
+							respawn
+						</button>
+					</div>
+					<div>
+						<button class="action_button" id="go_forward">
+							go_forward
+						</button>
+						<button class="action_button" id="go_backward">
+							go_backward
+						</button>
+						<button class="action_button" id="turn_left">
+							turn_left
+						</button>
+						<button class="action_button" id="turn_right">
+							turn_right
+						</button>
+					</div>
+					<div>
+						<button class="action_button" id="touch_front">
+							touch_front
+						</button>
+						<button class="action_button" id="touch_ground">
+							touch_ground
+						</button>
+						<button class="action_button" id="attack">
+							attack
+						</button>
+					</div>
+					<button onclick="inv=setInterval(/*(f=>()=>{for(let i=0;i<1;i++)f();})*/(()=>{var b=$('.action_button');b[Math.floor(Math.random()*b.length)].click()}));">?</button>
+					<button onclick="clearInterval(inv)">!</button>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
