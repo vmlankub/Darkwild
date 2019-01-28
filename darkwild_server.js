@@ -97,11 +97,17 @@ const BLOCK_ABBR={
 		nameString(grid){return BARRIER;},
 	},
 	[ICE]:{
+		constructor(){
+			this.health=1;
+		},
 		getTemperature(grid,pos){return -1;},
 		touchFeeling(grid,dir){return HARD;},
 		nameString(grid){return ICE;},
 	},
 	[GOLD_BLOCK]:{
+		constructor(){
+			this.health=1;
+		},
 		touchFeeling(grid,dir){return HARD;},
 		nameString(grid){return GOLD_BLOCK;},
 		destroy(grid,damage){
@@ -109,6 +115,10 @@ const BLOCK_ABBR={
 		}
 	},
 	[GIRL]:{
+		constructor(){
+			this.health=1;
+			this.dir=SOUTH;
+		},
 		getTemperature(grid,pos){return 1;},
 		touchFeeling(grid,dir){return SOFT;},
 		nameString(grid){return GIRL;},
@@ -118,6 +128,11 @@ const BLOCK_ABBR={
 		}
 	},
 	[PLAYER]:{
+		constructor(){
+			this.health=5;
+			this.coin=0;
+			this.dir=SOUTH;
+		},
 		getTemperature(grid,pos){return pos.x===grid.pos.x&&pos.y===grid.pos.y?0:1;},
 		touchFeeling(grid,dir){return SOFT;},
 		nameString(grid){return grid.block.name;},
@@ -166,6 +181,8 @@ const BLOCK_ABBR={
 class Block{
 	constructor(type=AIR,data={}){
 		this.type=type;
+		var con=BLOCK_ABBR[type].constructor;
+		if(con)con.call(this);
 		for(var key in data){
 			this[key]=data[key];
 		}
@@ -183,6 +200,9 @@ const GROUND_ABBR={
 	[NOTHING]:{
 	},
 	[SPAWNPOINT]:{
+		constructor(){
+			this.dir=SOUTH;
+		}
 	},
 	[LAVA]:{
 		getTemperature(grid,pos){return 2;},
@@ -197,7 +217,6 @@ const GROUND_ABBR={
 		}
 	},
 	[FLAGSTONE]:{
-		getTemperature(grid,pos){return -1},
 		afterTouch(grid){
 			this.blockAbbr(grid,'onMessage',{format:'mo_zzd'});
 		}
@@ -207,6 +226,8 @@ const GROUND_ABBR={
 class Ground{
 	constructor(type=NOTHING,data={}){
 		this.type=type;
+		var con=GROUND_ABBR[type].constructor;
+		if(con)con.call(this);
 		this.coin=0;
 		for(var key in data){
 			this[key]=data[key];
@@ -227,12 +248,15 @@ class Grid{
 /* MAP */
 const DEFAULT_MAP_SIZE=10;
 
+const MAP_STYLE_NONE='map_none';
 const MAP_STYLE_DEBUG='map_debug';
 const MAP_STYLE_TUTORIAL='map_tutorial';
 const MAP_STYLE_ARENA='map_arena';
 
+const DEFAULT_MAP_STYLE=MAP_STYLE_TUTORIAL;
+
 class Map{
-	constructor(h=DEFAULT_MAP_SIZE,w=DEFAULT_MAP_SIZE){
+	constructor(h=DEFAULT_MAP_SIZE,w=DEFAULT_MAP_SIZE,mapStyle=DEFAULT_MAP_STYLE){
 		this.h=h;
 		this.w=w;
 		this.arr=new Array(h);
@@ -242,24 +266,85 @@ class Map{
 				this.arr[i][j]=new Grid(this,{x:i,y:j});
 			}
 		}
+		this.build(mapStyle);
 	}
-	build(style){
-		switch(style){
+	build(mapStyle){
+		switch(mapStyle){
+			case MAP_STYLE_NONE:{
+				break;
+			}
 			case MAP_STYLE_DEBUG:{
 				this.arr[0][0].ground=new Ground(LAVA);
 				this.arr[0][1].ground=new Ground(THORNS);
 				this.arr[0][1].ground.coin+=100;
-				this.arr[0][2].block=new Block(GOLD_BLOCK,{health:1});
-				this.arr[1][0].block=new Block(GIRL,{health:1,dir:NORTH});
-				this.arr[1][1].ground=new Ground(SPAWNPOINT,{dir:SOUTH});
-				this.arr[1][2].block=new Block(ICE,{health:1});
+				this.arr[0][2].block=new Block(GOLD_BLOCK);
+				this.arr[1][0].block=new Block(GIRL);
+				this.arr[1][1].ground=new Ground(SPAWNPOINT);
+				this.arr[1][2].block=new Block(ICE);
 				this.arr[2][0].block=new Block(GRASS);
 				this.arr[2][1].ground=new Ground(FLAGSTONE);
 				this.arr[2][2].block=new Block(TREE);
 				break;
 			}
 			case MAP_STYLE_TUTORIAL:{
-				this.arr[1][1].ground=new Ground(SPAWNPOINT,{dir:SOUTH});
+				const mapBlock=[
+					'RRRRRRRRRR',
+					'R.R...I..R',
+					'R...T.R.GT',
+					'RRR...R..R',
+					'R..TRR...R',
+					'RG.......T',
+					'T..RTRT..R',
+					'R....IT..T',
+					'TOT...TT.R',
+					'RRTTRTRTRR',
+				];
+				const mapGround=[
+					'..........',
+					'.S........',
+					'..........',
+					'..........',
+					'......T...',
+					'..........',
+					'........L.',
+					'..TT...LO.',
+					'.....F..O.',
+					'..........',
+				];
+				const goldCount=[
+					'0000000000',
+					'0001000000',
+					'0000020100',
+					'0000100010',
+					'0300000000',
+					'0000010000',
+					'0000000500',
+					'0100200000',
+					'0001010000',
+					'0000000000',
+				];
+				for(let x=0;x<this.h;x++){
+					for(let y=0;y<this.w;y++){
+						var grid=this.getGrid({x,y});
+						grid.block=new Block({
+							'.':AIR,
+							'R':GRASS,
+							'I':ICE,
+							'O':GOLD_BLOCK,
+							'G':GIRL,
+							'T':TREE,
+						}[mapBlock[x][y]]);
+						grid.ground=new Ground({
+							'.':NOTHING,
+							'S':SPAWNPOINT,
+							'L':LAVA,
+							'T':THORNS,
+							'F':FLAGSTONE,
+						}[mapGround[x][y]],{
+							coin:parseInt(goldCount[x][y],36)
+						});
+					}
+				}
 				break;
 			}
 			default:{
@@ -306,8 +391,8 @@ class Map{
 };
 
 class Game{
-	constructor(mapH=DEFAULT_MAP_SIZE,mapW=DEFAULT_MAP_SIZE){
-		this.map=new Map(mapH,mapW);
+	constructor(mapH,mapW,mapStyle){
+		this.map=new Map(mapH,mapW,mapStyle);
 	}
 	setHandler(reponseHandler){
 		this.handler=reponseHandler;
@@ -327,8 +412,6 @@ class Game{
 		grid.block=new Block(PLAYER,{
 			name,
 			dir:grid.ground.type==SPAWNPOINT&&grid.ground.dir?grid.ground.dir:randomDir(this.random),
-			health:5,
-			coin:0
 		});
 		this.handler(name,{format:'player_state',data:this.blockAbbr(grid,'getState')});
 		return grid;
@@ -608,13 +691,9 @@ class Server{
 		this.game=new Game();
 		this.game.setHandler(this.handler);
 		this.game.setRNG(Math.random);
-		this.game.map.build(MAP_STYLE_DEBUG);
 	}
-	receive(action,data){
-		if(!data){
-			data={};
-		}
-		if(action=='join'){
+	receive(action,data={}){
+		if(action==='join'){
 			if(!data.name){
 				return [{format:'join_error',data:{reason:{format:'no_name'}}}];
 			}else if(typeof this.uuid[data.name]!=='undefined'&&(!data.uuid||this.uuid[data.name]!==data.uuid)){

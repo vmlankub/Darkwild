@@ -1,4 +1,5 @@
-var TEXTS={
+/* LANGUAGE */
+const TEXTS={
 	'zh':{
 		'title':{text:'暮光原野'},
 		'game_title':{text:'暮光原野'},
@@ -211,48 +212,81 @@ var TEXTS={
 	}
 };
 
-var data={
-	TEXTS,
-	language:'zh',
-	messages:[],
-	name:'',
-	health:'',
-	coin:'',
-};
-
-var computed={
-	life:function(){
-		return this.health>0;
-	},
-	enable:function(){
-		return {
-		'go_forward':this.life,
-		'go_backward':this.life,
-		'turn_left':this.life,
-		'turn_right':this.life,
-		'touch_front':this.life,
-		'touch_ground':this.life,
-		'attack':this.life,
-		'respawn':!this.life,
-		};
-	},
-};
-
-var methods={
-	getText(id){
-		return this.TEXTS[this.language][id].text;
-	},
-	getStyle(msg){
-		var color=this.TEXTS[this.language][msg.format].color;
-		return color?{color}:{};
-	},
-	praseMessage(msg){
+/* Client */
+class Client{
+	constructor(language='zh'){
+		$('#send_message')[0].value='';
+		this.reponse=$('#reponse');
+		this.messages=[];
+		this.setLanguage(language);
+	}
+	setLanguage(language){
+		this.language=language;
+		this.texts=TEXTS[language];
+		this.resetText();
+	}
+	onMessage(msg){
+		if(msg instanceof Array){
+			for(var i in msg){
+				this.onMessage(msg[i]);
+			}
+			return;
+		}
+		switch(msg.format){
+			case 'uuid_data':{
+				this.uuid=msg.data.uuid;
+				break;
+			}
+			case 'player_state':{
+				var {name,health,coin}=msg.data;
+				$('#name').text(name);
+				$('#health').text(health);
+				$('#coin').text(coin);
+				for(var id of [
+					'go_forward',
+					'go_backward',
+					'turn_left',
+					'turn_right',
+					'touch_front',
+					'touch_ground',
+					'attack',
+				]){
+					$('#'+id).prop('disabled',health<=0);
+				}
+				$('#respawn').prop('disabled',health>0);
+				break;
+			}
+			default:{
+				var onBottom=this.reponse.scrollTop()+this.reponse.height()+50>=this.reponse.prop("scrollHeight");
+				this.messages.push(msg);
+				this.praseMessage(msg);
+				if(onBottom){
+					this.reponse.scrollTop(this.reponse.prop("scrollHeight"));
+				}
+				break;
+			}
+		}
+	}
+	checkText(id){
+		while(typeof this.texts[id]==='undefined'){
+			this.texts[id]=JSON.parse(prompt(`${id} in ${this.language}`,`{"text":"${id}"}`));
+		}
+		return this.texts[id];
+	}
+	buildText(id){
+		var x=this.checkText(id);
+		$('#'+id).html(x.text);
+		if(x.color){
+			$('#'+id).css('color',x.color);
+		}
+	}
+	praseText(msg){
 		if(typeof msg.format=='string'){
-			var str=this.getText(msg.format);
+			var str=this.checkText(msg.format).text;
 			if(msg.data){
 				var newData={};
 				for(var i in msg.data){
-					newData[i]=this.praseMessage(msg.data[i]);
+					newData[i]=this.praseText(msg.data[i]);
 				}
 				str=str.format(newData);
 			}
@@ -262,77 +296,71 @@ var methods={
 		}else{
 			return JSON.stringify(msg);
 		}
-	},
-	sendSimpleAction(id){
-		connector.send(id,{name:data.name,uuid:data.uuid});
-	},
-	onKey(e){
-		var id=TABLE[String.fromCharCode(e.keyCode)];
-		if(id&&this.enable[id]){
-			this.sendSimpleAction(id);
+	}
+	praseMessage(msg){
+		var node=$('<li></li>');
+		var text=this.checkText(msg.format);
+		if(text.color){
+			node.css('color',text.color);
+		}
+		node.text(this.praseText(msg));
+		this.reponse.append(node);
+	}
+	resetText(){
+		$('title').html(this.texts.title.text);
+		for(var id of [
+			'game_title',
+			'action_title',
+			'go_forward',
+			'go_backward',
+			'turn_left',
+			'turn_right',
+			'touch_front',
+			'touch_ground',
+			'attack',
+			'respawn',
+			'name_tag',
+			'health_tag',
+			'coin_tag',
+		]){
+			this.buildText(id);
+		}
+		this.reponse.html('');
+		for(var i in this.messages){
+			this.praseMessage(this.messages[i]);
 		}
 	}
-}
-
-var app = new Vue({
-	el:'#app',
-	data,
-	computed,
-	methods,
-})
-
-function onMessage(msg){
-	if(msg instanceof Array){
-		for(var i in msg){
-			onMessage(msg[i]);
+	send(action,data={},callback=this.onMessage){
+		if(!data.name){
+			data.name=this.name;
 		}
-		return;
+		if(!data.uuid){
+			data.uuid=this.uuid;
+		}
+		callback.call( this, this.server.receive(action,data) );
 	}
-	switch(msg.format){
-		case 'uuid_data':{
-			data.uuid=msg.data.uuid;
-			break;
-		}
-		case 'player_state':{
-			for(let key of ['name','health','coin']){
-				data[key]=msg.data[key];
+	connect(server,name){
+		this.name=name;
+		this.server=server;
+		this.send('join',{name});
+		return this;
+	}
+	buildAction(id,name){
+		if(!name)name=id;
+		var self=this;
+		$('#'+id).click(function(){
+			self.send(name,{name:self.name,uuid:self.uuid});
+		});
+		return this;
+	}
+	buildQuickKey(key,id){
+		$(document).keydown(function(event){
+			if(event.target.nodeName!=='INPUT'&&key.indexOf(event.key)!=-1){
+				if(!$('#'+id).prop('disabled')){
+					$('#'+id).click();
+				}
 			}
-			break;
-		}
-		default:{
-			// var onBottom=this.reponse.scrollTop()+this.reponse.height()+50>=this.reponse.prop("scrollHeight");
-			data.messages.push(msg);
-			// if(onBottom){
-			// 	this.reponse.scrollTop(this.reponse.prop("scrollHeight"));
-			// }
-			break;
-		}
+		});
+		return this;
 	}
-}
-
-var connector=new Connector();
-connector.connect(new Server());
-connector.listen(onMessage);
-connector.send('join',{name:'test'});
-
-const TABLE={
-	'W':'go_forward',
-	'S':'go_backward',
-	'A':'turn_left',
-	'D':'turn_right',
-	'E':'touch_front',
-	'Q':'touch_ground',
-	'F':'attack',
-	'R':'respawn',
 };
-
-window.onkeydown=function(event) {
-	var e=event||window.event;
-	app.onKey.call(app,e);
-}
-
-// const ops='wqawwwawedwwqfwdwwwewesdwawdwwwwqawdwawqefwqesawwwdwawe'.toUpperCase();
-// console.log(ops);
-// for(let op of [...ops]){
-// 	app.onKey.call(app,{keyCode:op.charCodeAt(0)});
-// }

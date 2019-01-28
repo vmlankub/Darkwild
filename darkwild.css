@@ -18,9 +18,6 @@ body{
 	float: left;
 	padding: 1%;
 }
-/*#console_title{
-	color: darkgray;
-}*/
 #reponse{
 	height: 100%;
 	border: solid 1px white;
@@ -42,7 +39,7 @@ body{
 	border: solid 1px white;
 	width: 100%;
 }
-h1,h2{
+h1,h2,h3,h4,h5,h6{
 	margin: 10px 0;
 }
 .action_button{

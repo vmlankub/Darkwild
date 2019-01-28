@@ -38,4 +38,11 @@ $(function(){
 			input.val('');
 		}
 	});
+
+	const ops='wqawwwawedwwqfwdwwwewesdwawdwwwwqawdwawqefwqesawwwdwawe';
+	for(let i=0;i<ops.length;i++){
+		var e = jQuery.Event("keydown");
+		e.keyCode = ops.charCodeAt(i);
+		$(document).trigger(e);
+	}
 });
