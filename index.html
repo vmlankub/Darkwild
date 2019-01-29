@@ -10,14 +10,16 @@
 		<link rel="stylesheet" type="text/css" href="./darkwild.css">
 	</head>
 	<body>
-		<div id="app" @keyup.enter="console.log('ok')">
+		<div id="app" >
 			<h1 id="game_title">{{getText('game_title')}}</h1>
 			<div id="game_body">
 				<div class="div_col">
 					<ul id="reponse">
-						<li v-for="msg in messages" :style="getStyle(msg)">{{praseMessage(msg)}}</li>
+						<li v-for="msg in messages" v-if="msgShow(msg)" :style="getStyle(msg)">{{praseMessage(msg)}}</li>
 					</ul>
-					<input type="text" id="send_message" maxlength="20000"/>
+					<div @keydown.stop="/* just stop it */">
+						<input type="text" id="send_message" maxlength="20000" v-model.trim="inputMessage" @keydown.enter.stop="sendMessage"/>
+					</div>
 				</div>
 				<div class="div_col">
 					<h3 id="action_title">{{getText('action_title')}}</h3>
@@ -37,20 +39,20 @@
 					</div>
 					<div id="move_actions">
 						<div>
-							<button class="action_button" id="respawn" @click="sendSimpleAction('respawn')" :disabled="!enable.respawn">{{getText('respawn')}}</button>
+							<button class="btn action" id="respawn" @click="sendSimpleAction('respawn')" :disabled="!enable.respawn">{{getText('respawn')}}</button>
 						</div>
 						<div>
-							<button class="action_button" id="go_forward" @click="sendSimpleAction('go_forward')" :disabled="!enable.go_forward">{{getText('go_forward')}}</button>
-							<button class="action_button" id="go_backward" @click="sendSimpleAction('go_backward')" :disabled="!enable.go_backward">{{getText('go_backward')}}</button>
-							<button class="action_button" id="turn_left" @click="sendSimpleAction('turn_left')" :disabled="!enable.turn_left">{{getText('turn_left')}}</button>
-							<button class="action_button" id="turn_right" @click="sendSimpleAction('turn_right')" :disabled="!enable.turn_right">{{getText('turn_right')}}</button>
+							<button class="btn action" id="go_forward" @click="sendSimpleAction('go_forward')" :disabled="!enable.go_forward">{{getText('go_forward')}}</button>
+							<button class="btn action" id="go_backward" @click="sendSimpleAction('go_backward')" :disabled="!enable.go_backward">{{getText('go_backward')}}</button>
+							<button class="btn action" id="turn_left" @click="sendSimpleAction('turn_left')" :disabled="!enable.turn_left">{{getText('turn_left')}}</button>
+							<button class="btn action" id="turn_right" @click="sendSimpleAction('turn_right')" :disabled="!enable.turn_right">{{getText('turn_right')}}</button>
 						</div>
 						<div>
-							<button class="action_button" id="touch_front" @click="sendSimpleAction('touch_front')" :disabled="!enable.touch_front">{{getText('touch_front')}}</button>
-							<button class="action_button" id="touch_ground" @click="sendSimpleAction('touch_ground')" :disabled="!enable.touch_ground">{{getText('touch_ground')}}</button>
-							<button class="action_button" id="attack" @click="sendSimpleAction('attack')" :disabled="!enable.attack">{{getText('attack')}}</button>
+							<button class="btn action" id="touch_front" @click="sendSimpleAction('touch_front')" :disabled="!enable.touch_front">{{getText('touch_front')}}</button>
+							<button class="btn action" id="touch_ground" @click="sendSimpleAction('touch_ground')" :disabled="!enable.touch_ground">{{getText('touch_ground')}}</button>
+							<button class="btn action" id="attack" @click="sendSimpleAction('attack')" :disabled="!enable.attack">{{getText('attack')}}</button>
 						</div>
-						<button onclick="inv=setInterval(/*(f=>()=>{for(let i=0;i<1;i++)f();})*/(()=>{var b=document.getElementsByClassName('action_button');b[Math.floor(Math.random()*b.length)].click()}));">?</button>
+						<button onclick="inv=setInterval(/*(f=>()=>{for(let i=0;i<1;i++)f();})*/(()=>{var b=document.getElementsByClassName('btn action');b[Math.floor(Math.random()*b.length)].click()}));">?</button>
 						<button onclick="clearInterval(inv)">!</button>
 					</div>
 				</div>

@@ -42,13 +42,15 @@ body{
 h1,h2,h3,h4,h5,h6{
 	margin: 10px 0;
 }
-.action_button{
+.btn{
 	border: 1px solid white;
 	background-color:black;
 	color: white;
 	padding: 2px;
 	text-align: center;
 	border-radius: 0px;
+}
+.btn.action{
 	width:120px;
 }
 #name_container{
